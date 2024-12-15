@@ -7,22 +7,36 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 require('dotenv').config();
 
 app.use(cors());
-app.use(express.json()); 
+app.use(express.json());
 
 // token verification
-const verifyJWT = (req, res, next) =>{
-    const authorization = req.header.authorization;
-    if(!authorization){
-        return res.send({message: "No Token"})
+const verifyJWT = (req, res, next) => {
+    const authorization = req.headers.authorization;
+    if (!authorization) {
+        return res.send({ message: "No Token" })
     }
     const token = authorization.split(' ')[1];
-    jwt.verify(token, process.env.ACCESS_KEY_TOKEN, (err, decoded) =>{
-        if(err){
-            return res.send({message: "Invalid Token"})
+    jwt.verify(token, process.env.ACCESS_KEY_TOKEN, (err, decoded) => {
+        if (err) {
+            return res.send({ message: "Invalid Token" })
         }
         req.decoded = decoded;
+        next();
     })
 }
+
+// verify seller
+const verifySelller = async (req, res, next) => {
+    const email = req.body.sellerEmail;
+    const query = { email: email };
+    const user = await userCollection.findOne(query);
+
+    if (user?.role !== "seller") {
+        return res.status(403).send({ message: "Forbidden Access" });
+    }
+    next();
+};
+
 
 
 // mongodb
@@ -51,7 +65,7 @@ async function run() {
             // if (user) {
             //     return res.send({message: "No User Found"})
             // }
-            res.send(result)
+            res.send(result);
         })
 
         // Post Users
@@ -67,7 +81,7 @@ async function run() {
         })
 
         // add product
-        app.post("/add-product", async (req, res) => {
+        app.post("/add-products", verifyJWT, verifySelller, async (req, res) => {
             const product = req.body;
             const result = await productCollection.insertOne(product);
             res.send(result)
