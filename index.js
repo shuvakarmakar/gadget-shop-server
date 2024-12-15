@@ -7,8 +7,25 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 require('dotenv').config();
 
 app.use(cors());
-app.use(express.json()); // Correctly apply middleware
+app.use(express.json()); 
 
+// token verification
+const verifyJWT = (req, res, next) =>{
+    const authorization = req.header.authorization;
+    if(!authorization){
+        return res.send({message: "No Token"})
+    }
+    const token = authorization.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_KEY_TOKEN, (err, decoded) =>{
+        if(err){
+            return res.send({message: "Invalid Token"})
+        }
+        req.decoded = decoded;
+    })
+}
+
+
+// mongodb
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.gu0z5kw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 const client = new MongoClient(uri, {
     serverApi: {
@@ -27,15 +44,32 @@ async function run() {
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
+        // get Users
+        app.get("/user/:email", async (req, res) => {
+            const query = { email: req.params.email }
+            const result = await userCollection.findOne(query);
+            // if (user) {
+            //     return res.send({message: "No User Found"})
+            // }
+            res.send(result)
+        })
 
+        // Post Users
         app.post('/users', async (req, res) => {
             const user = req.body;
             const query = { email: user.email }
             const existingUser = await userCollection.findOne(query);
-            if(existingUser){
-                return res.send({message: "User already exists"})
+            if (existingUser) {
+                return res.send({ message: "User already exists" })
             }
             const result = await userCollection.insertOne(user);
+            res.send(result)
+        })
+
+        // add product
+        app.post("/add-product", async (req, res) => {
+            const product = req.body;
+            const result = await productCollection.insertOne(product);
             res.send(result)
         })
 
