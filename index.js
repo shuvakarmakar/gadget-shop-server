@@ -89,12 +89,33 @@ async function run() {
 
         // get product
 
-        app.get("/all-products",  async (req, res) => {
+        app.get("/all-products", async (req, res) => {
             // name searching
             // sort by price 
             // filter by category 
             // filter by brand 
+            const query = {};
+
+            if (title) {
+                query.title = { $regex: title, $options: "i" }
+            }
+
+            if (category) {
+                query.category = { $regex: category, $options: "i" }
+            }
+
+            if (brand) {
+                query.brand = brand;
+
+                const sortOption = sort === 'asc' ? 1 : -1
+            }
+
+            const products = await productCollection
+            .find(query)
+            .sort({ price: sortOption })
+            .toArray();
             
+            res.json(products)
         })
 
 
