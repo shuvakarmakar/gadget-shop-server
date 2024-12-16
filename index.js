@@ -87,6 +87,15 @@ async function run() {
             res.send(result)
         })
 
+        // get product
+
+        app.get("/all-products",  async (req, res) => {
+            // name searching
+            // sort by price 
+            // filter by category 
+            // filter by brand 
+            
+        })
 
 
 
