@@ -94,6 +94,9 @@ async function run() {
             // sort by price 
             // filter by category 
             // filter by brand 
+
+            const { title, sort, category, brand } = req.query;
+
             const query = {};
 
             if (title) {
@@ -106,16 +109,26 @@ async function run() {
 
             if (brand) {
                 query.brand = brand;
-
-                const sortOption = sort === 'asc' ? 1 : -1
             }
 
+            const sortOption = sort === 'asc' ? 1 : -1
+
             const products = await productCollection
-            .find(query)
-            .sort({ price: sortOption })
-            .toArray();
-            
-            res.json(products)
+                .find(query)
+                .sort({ price: sortOption })
+                .toArray();
+
+
+            const productInfo = await productCollection
+                .find({}, { projection: { category: 1, brand: 1 } })
+                .toArray();
+
+            const totalProducts = await productCollection.countDocuments(query)
+
+            const brands = [...new Set(productInfo.map((product) => product.brand))]
+            const categories = [...new Set(productInfo.map((product) => product.category))]
+
+            res.json({ products, brands, categories, totalProducts });
         })
 
 
