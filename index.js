@@ -90,12 +90,8 @@ async function run() {
         // get product
 
         app.get("/all-products", async (req, res) => {
-            // name searching
-            // sort by price 
-            // filter by category 
-            // filter by brand 
 
-            const { title, sort, category, brand } = req.query;
+            const { title, sort, category, brand, page = 1, limit = 9 } = req.query;
 
             const query = {};
 
@@ -111,10 +107,16 @@ async function run() {
                 query.brand = brand;
             }
 
+
+            const pageNumber = Number(page); //convert into Number for Pagination
+            const limitNumber = Number(limit); //convert into Number for Pagination
+
             const sortOption = sort === 'asc' ? 1 : -1
 
             const products = await productCollection
                 .find(query)
+                .skip((pageNumber - 1) * limitNumber)
+                .limit(limitNumber)
                 .sort({ price: sortOption })
                 .toArray();
 
